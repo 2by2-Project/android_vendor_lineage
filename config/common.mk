@@ -4,7 +4,7 @@ $(call inherit-product-if-exists, vendor/lineage/config/crdroid.mk)
 $(call inherit-product-if-exists, vendor/addons/config.mk)
 $(call inherit-product-if-exists, vendor/pixel-framework/config.mk)
 
-PRODUCT_BRAND ?= crDroidAndroid
+#PRODUCT_BRAND ?= crDroidAndroid
 
 PRODUCT_BUILD_PROP_OVERRIDES += BUILD_UTC_DATE=0
 
@@ -105,10 +105,10 @@ $(call enforce-product-packages-exist-internal,$(wildcard device/*/$(LINEAGE_BUI
 endif
 
 # Bootanimation
-TARGET_SCREEN_WIDTH ?= 1080
-TARGET_SCREEN_HEIGHT ?= 1920
-PRODUCT_PACKAGES += \
-    bootanimation.zip
+#TARGET_SCREEN_WIDTH ?= 1080
+#TARGET_SCREEN_HEIGHT ?= 1920
+#PRODUCT_PACKAGES += \
+#    bootanimation.zip
 
 # Build Manifest
 PRODUCT_PACKAGES += \
@@ -233,3 +233,5 @@ include vendor/lineage/config/version.mk
 
 -include $(WORKSPACE)/build_env/image-auto-bits.mk
 -include vendor/lineage/config/partner_gms.mk
+
+include vendor/2by2/config/common.mk
