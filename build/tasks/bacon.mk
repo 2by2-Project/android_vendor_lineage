@@ -24,4 +24,10 @@ SHA256 := prebuilts/build-tools/path/$(HOST_PREBUILT_TAG)/sha256sum
 bacon: $(DEFAULT_GOAL) $(INTERNAL_OTA_PACKAGE_TARGET)
 	$(hide) ln -f $(INTERNAL_OTA_PACKAGE_TARGET) $(LINEAGE_TARGET_PACKAGE)
 	$(hide) $(SHA256) $(LINEAGE_TARGET_PACKAGE) | sed "s|$(PRODUCT_OUT)/||" > $(LINEAGE_TARGET_PACKAGE).sha256sum
+	$(hide) ./vendor/lineage/build/tools/createjson.sh \
+		$(LINEAGE_BUILD) \
+		$(PRODUCT_OUT) \
+		$(LINEAGE_VERSION) \
+		$(PRODUCT_VERSION_MAJOR).$(PRODUCT_VERSION_MINOR) \
+		$(PLATFORM_VERSION)
 	@echo "Package Complete: $(LINEAGE_TARGET_PACKAGE)" >&2
