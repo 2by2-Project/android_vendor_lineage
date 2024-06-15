@@ -31,3 +31,6 @@ cat <<EOF > ${2}/${1}.json
   ]
 }
 EOF
+
+cp ${2}/${1}.json vendor/2by2-ota/builds
+touch vendor/2by2-ota/changelogs/${1}.txt
