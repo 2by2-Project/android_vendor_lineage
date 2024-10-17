@@ -1,56 +1,25 @@
-function __print_lineage_functions_help() {
-cat <<EOF
-Additional LineageOS functions:
-- cout:            Changes directory to out.
-- mmp:             Builds all of the modules in the current directory and pushes them to the device.
-- mmap:            Builds all of the modules in the current directory and its dependencies, then pushes the package to the device.
-- mmmp:            Builds all of the modules in the supplied directories and pushes them to the device.
-- lineagegerrit:   A Git wrapper that fetches/pushes patch from/to LineageOS Gerrit Review.
-- lineagerebase:   Rebase a Gerrit change and push it again.
-- lineageremote:   Add git remote for LineageOS Gerrit Review.
-- aospremote:      Add git remote for matching AOSP repository.
-- cloremote:       Add git remote for matching CodeLinaro repository.
-- githubremote:    Add git remote for LineageOS Github.
-- mka:             Builds using SCHED_BATCH on all processors.
-- mkap:            Builds the module(s) using mka and pushes them to the device.
-- cmka:            Cleans and builds using mka.
-- repodiff:        Diff 2 different branches or tags within the same repo
-- repolastsync:    Prints date and time of last repo sync.
-- reposync:        Parallel repo sync using ionice and SCHED_BATCH.
-- repopick:        Utility to fetch changes from Gerrit.
-- sort-blobs-list: Sort proprietary-files.txt sections with LC_ALL=C.
-- installboot:     Installs a boot.img to the connected device.
-- installrecovery: Installs a recovery.img to the connected device.
-EOF
-}
-
-function mk_timer()
+# check to see if the supplied product is one we can build
+function check_product()
 {
-    local start_time=$(date +"%s")
-    $@
-    local ret=$?
-    local end_time=$(date +"%s")
-    local tdiff=$(($end_time-$start_time))
-    local hours=$(($tdiff / 3600 ))
-    local mins=$((($tdiff % 3600) / 60))
-    local secs=$(($tdiff % 60))
-    local ncolors=$(tput colors 2>/dev/null)
-    echo
-    if [ $ret -eq 0 ] ; then
-        echo -n "#### make completed successfully "
+    local T=$(gettop)
+    if [ ! "$T" ]; then
+        echo "Couldn't locate the top of the tree. Try setting TOP." >&2
+        return
+    fi
+    if (echo -n $1 | grep -q -e "^lineage_") ; then
+        LINEAGE_BUILD=$(echo -n $1 | sed -e 's/^lineage_//g')
     else
-        echo -n "#### make failed to build some targets "
+        LINEAGE_BUILD=
     fi
-    if [ $hours -gt 0 ] ; then
-        printf "(%02g:%02g:%02g (hh:mm:ss))" $hours $mins $secs
-    elif [ $mins -gt 0 ] ; then
-        printf "(%02g:%02g (mm:ss))" $mins $secs
-    elif [ $secs -gt 0 ] ; then
-        printf "(%s seconds)" $secs
-    fi
-    echo " ####"
-    echo
-    return $ret
+    export LINEAGE_BUILD
+
+        TARGET_PRODUCT=$1 \
+        TARGET_RELEASE=$2 \
+        TARGET_BUILD_VARIANT= \
+        TARGET_BUILD_TYPE= \
+        TARGET_BUILD_APPS= \
+        _get_build_var_cached TARGET_DEVICE > /dev/null
+    # hide successful answers, but allow the errors to show
 }
 
 function brunch()
@@ -141,7 +110,7 @@ function dddclient()
    local OUT_VENDOR_SO_SYMBOLS=$(get_abs_build_var TARGET_OUT_VENDOR_SHARED_LIBRARIES_UNSTRIPPED)
    local OUT_EXE_SYMBOLS=$(get_symbols_directory)
    local PREBUILTS=$(get_abs_build_var ANDROID_PREBUILTS)
-   local ARCH=$(get_build_var TARGET_ARCH)
+   local ARCH=$(_get_build_var_cached TARGET_ARCH)
    local GDB
    case "$ARCH" in
        arm) GDB=arm-linux-androideabi-gdb;;
@@ -220,7 +189,7 @@ function dddclient()
        if [ "$USE64BIT" != "" ] ; then
            WHICH_GDB=$ANDROID_TOOLCHAIN/$GDB64
        # 32-bit exe / 32-bit platform
-       elif [ "$(get_build_var TARGET_2ND_ARCH)" = "" ]; then
+       elif [ "$(_get_build_var_cached TARGET_2ND_ARCH)" = "" ]; then
            WHICH_GDB=$ANDROID_TOOLCHAIN/$GDB
        # 32-bit exe / 64-bit platform
        else
@@ -427,28 +396,6 @@ function installrecovery()
     else
         echo "The connected device does not appear to be $LINEAGE_BUILD, run away!"
     fi
-}
-
-function makerecipe() {
-    if [ -z "$1" ]
-    then
-        echo "No branch name provided."
-        return 1
-    fi
-    cd android
-    sed -i s/'default revision=.*'/'default revision="refs\/heads\/'$1'"'/ default.xml
-    git commit -a -m "$1"
-    cd ..
-
-    repo forall -c '
-
-    if [ "$REPO_REMOTE" = "github" ]
-    then
-        pwd
-        lineageremote
-        git push lineage HEAD:refs/heads/'$1'
-    fi
-    '
 }
 
 function lineagegerrit() {
@@ -943,8 +890,8 @@ function sort-blobs-list() {
 }
 
 function fixup_common_out_dir() {
-    common_out_dir=$(get_build_var OUT_DIR)/target/common
-    target_device=$(get_build_var TARGET_DEVICE)
+    common_out_dir=$(_get_build_var_cached OUT_DIR)/target/common
+    target_device=$(_get_build_var_cached TARGET_DEVICE)
     common_target_out=common-${target_device}
     if [ ! -z $LINEAGE_FIXUP_COMMON_OUT ]; then
         if [ -d ${common_out_dir} ] && [ ! -L ${common_out_dir} ]; then
