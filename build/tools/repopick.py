@@ -385,7 +385,7 @@ def main():
     # {project: {path, revision}}
 
     for project in projects:
-        name = project.get("name")
+        name = project.get("name").replace('2by2-Project', 'LineageOS')
         # when name and path are equal, "repo manifest" doesn't return a path at all, so fall back to name
         path = project.get("path", name)
         revision = project.get("upstream")
