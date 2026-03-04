@@ -17,7 +17,7 @@ PRODUCT_PACKAGES += \
     Stk
 
 # Default ringtone
-PRODUCT_PRODUCT_PROPERTIES += \
+PRODUCT_PRODUCT_PROPERTIES ?= \
     ro.config.ringtone=Orion.ogg
 
 # Tethering - allow without requiring a provisioning app
